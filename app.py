@@ -8,9 +8,21 @@ from linebot.v3.messaging import (
     ApiClient,
     MessagingApi,
     ReplyMessageRequest,
-    TextMessage
+    PushMessageRequest,
+    BroadcastRequest,
+    MulticastRequest,
+    TextMessage,
+    TemplateMessage,
+    ButtonsTemplate,
+    PostbackAction
 )
-from linebot.v3.webhooks import MessageEvent, TextMessageContent
+
+from linebot.v3.webhooks import (
+    MessageEvent,
+    FollowEvent,
+    PostbackEvent,
+    TextMessageContent
+)
 
 app = Flask(__name__)
 
@@ -36,21 +48,19 @@ def callback():
     return 'OK'
 
 # 當收到文字訊息時的處理邏輯
+@handler.add(FollowEvent)
+def handle_follow(event):
+    print(f'Got {event.type}event')
+
+
 @handler.add(MessageEvent, message=TextMessageContent)
-def handle_message(event):
-    user_message = event.message.text
-    
-    with ApiClient(configuration) as api_client:
+def message_text(event):
+    with ApiClient(Configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
-        # 覆誦使用者傳送的訊息
-        line_bot_api.reply_message_with_http_info(
+        
+        line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
-                messages=[TextMessage(text=user_message)]
+                messages=[TextMessage(text='已傳送訊息')]
             )
         )
-
-if __name__ == "__main__":
-    # Render 會動態分配 Port，通常透過環境變數 PORT 讀取
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
