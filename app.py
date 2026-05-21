@@ -55,7 +55,7 @@ def handle_follow(event):
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def message_text(event):
-    with ApiClient(Configuration) as api_client:
+    with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         
         line_bot_api.reply_message(
