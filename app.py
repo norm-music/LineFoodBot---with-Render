@@ -61,7 +61,7 @@ def message_text(event):
         line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
-                messages=[TextMessage(text='D AAA  D G F# E')]
+                messages=[TextMessage(text='陪我打maimai')]
             )
         )
 if  __name__=="__main__":
