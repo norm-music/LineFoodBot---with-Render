@@ -64,3 +64,5 @@ def message_text(event):
                 messages=[TextMessage(text='已傳送訊息')]
             )
         )
+if  __name__=="__main__":
+    app.run()
