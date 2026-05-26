@@ -18,11 +18,14 @@ from linebot.v3.messaging import (
     BroadcastRequest,
     MulticastRequest,
     TextMessage,
+    LocationAction,
     TemplateMessage,
     ButtonsTemplate,
     PostbackAction,
     MessageAction,
-    DatetimePickerAction
+    DatetimePickerAction,
+    QuickReply,
+    QuickReplyItem
 )
 
 from linebot.v3.webhooks import (
@@ -75,9 +78,9 @@ def message_text(event):
                 title='您的餐廳小幫手',
                 text='解決您的選擇障礙',
                 actions=[
-                    PostbackAction(label='回傳值', data='ping', displayText="傳了"),
                     MessageAction(label="早安", text="早安"),
-                    DatetimePickerAction(label='選擇時間', data='時間', mode='datetime')
+                    DatetimePickerAction(label='選擇時間', data='時間', mode='datetime'),
+                    LocationAction(label="回傳我的位置")
                 ])
             template_message= TemplateMessage(
                 alt_text="這是選擇機器人",
