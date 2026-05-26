@@ -68,8 +68,7 @@ def message_text(event):
         line_bot_api = MessagingApi(api_client)
         
         if text == "很餓":
-            url = request.url_root + '/static/Denia.jpg'
-            url = url.replace("http","https")
+            url="https://linefoodbot.onrender.com/static/Denia.jpg"
             app.logger.info("url="+url)
             button_template = ButtonsTemplate(
                 thumbnail_image_url=url,
