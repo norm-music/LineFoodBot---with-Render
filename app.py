@@ -68,13 +68,13 @@ def message_text(event):
         line_bot_api = MessagingApi(api_client)
         
         if text == "很餓":
-            url = request.url_root + '/pic/Denia.jpg'
+            url = request.url_root + '/static/Denia.jpg'
             url = url.replace("http","https")
             app.logger.info("url="+url)
             button_template = ButtonsTemplate(
-                thumbnailImageUrl=url,
-                title='您的餐廳小幫手'  ,
-                text='解決您的選擇障礙' ,
+                thumbnail_image_url=url,
+                title='您的餐廳小幫手',
+                text='解決您的選擇障礙',
                 actions=[
                     PostbackAction(label='回傳值', data='ping', displayText="傳了"),
                     MessageAction(label="早安", text="早安"),
