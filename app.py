@@ -8,13 +8,21 @@ from linebot.v3.messaging import (
     ApiClient,
     MessagingApi,
     ReplyMessageRequest,
+    ConfirmTemplate,
+    ButtonsTemplate,
+    CarouselTemplate,
+    CarouselColumn,
+    ImageCarouselColumn,
+    ImageCarouselTemplate,
     PushMessageRequest,
     BroadcastRequest,
     MulticastRequest,
     TextMessage,
     TemplateMessage,
     ButtonsTemplate,
-    PostbackAction
+    PostbackAction,
+    MessageAction,
+    DatetimePickerAction
 )
 
 from linebot.v3.webhooks import (
@@ -55,14 +63,36 @@ def handle_follow(event):
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def message_text(event):
+    text = event.message.text
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
         
-        line_bot_api.reply_message(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text='陪我打maimai')]
+        if text == "很餓":
+            url = request.url_root + '/pic/Denia.jpg'
+            url = url.replace("http","https")
+            app.logger.info("url"+url)
+            button_template = ButtonsTemplate(
+                thumbnailImageUrl=url,
+                title='您的餐廳小幫手'  ,
+                text='解決您的選擇障礙' ,
+                actions=[
+                    PostbackAction(label='回傳值', data='ping', displayText="傳了"),
+                    MessageAction(label="早安", text="早安"),
+                    DatetimePickerAction(label='選擇時間', data='時間', mode='datetime')
+                ])
+            template_message= TemplateMessage(
+                alt_text="這是選擇機器人",
+                template=button_template
             )
-        )
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    replyToken=event.reply_token,
+                    messages=[template_message]
+                )
+            )
+
+
+
 if  __name__=="__main__":
     app.run()
