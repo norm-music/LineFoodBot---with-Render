@@ -70,7 +70,7 @@ def message_text(event):
         if text == "很餓":
             url = request.url_root + '/pic/Denia.jpg'
             url = url.replace("http","https")
-            app.logger.info("url"+url)
+            app.logger.info("url="+url)
             button_template = ButtonsTemplate(
                 thumbnailImageUrl=url,
                 title='您的餐廳小幫手'  ,
