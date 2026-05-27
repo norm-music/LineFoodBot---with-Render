@@ -9,18 +9,37 @@ from linebot.v3.messaging import (
     ApiClient,
     MessagingApi,
     ReplyMessageRequest,
+    ConfirmTemplate,
+    ButtonsTemplate,
+    CarouselTemplate,
+    CarouselColumn,
+    ImageCarouselColumn,
+    ImageCarouselTemplate,
+    PushMessageRequest,
+    BroadcastRequest,
+    MulticastRequest,
     TextMessage,
+    LocationAction,
+    TemplateMessage,
+    ButtonsTemplate,
+    PostbackAction,
+    MessageAction,
+    DatetimePickerAction,
+    QuickReply,
+    QuickReplyItem,
     FlexMessage,
-    FlexContainer
+    FlexContainer,
+
 )
+
 from linebot.v3.webhooks import (
     MessageEvent,
     FollowEvent,
+    PostbackEvent,
     TextMessageContent
 )
 
 app = Flask(__name__)
-
 # 從環境變數讀取憑證
 CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET')
@@ -110,8 +129,9 @@ def message_text(event):
                         {
                             "type": "button",
                             "action": {
-                                "type": "location",
-                                "label": "定位"
+                                "type": "uri",
+                                "label": "定位",
+                                "uri":"https://line.me/R/nv/location/"
                             },
                             "margin": "md",
                             "style": "primary"
@@ -135,12 +155,7 @@ def message_text(event):
             line_bot_api.reply_message(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
-                    messages=[
-                        FlexMessage(
-                            alt_text='詳細說明',
-                            contents=flex_content
-                        )
-                    ]
+                    messages=[FlexMessage(alt_text='詳細說明',contents=flex_content)]
                 )
             )
 
