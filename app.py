@@ -1,5 +1,6 @@
 import os
 import json
+import math
 import sqlite3
 from flask import Flask, request, abort, render_template, jsonify
 from linebot.v3 import WebhookHandler
@@ -38,6 +39,7 @@ from linebot.v3.webhooks import (
     TextMessageContent,
     LocationMessageContent
 )
+from sqlite import init_db
 
 app = Flask(__name__)
 # 從環境變數讀取憑證
@@ -46,6 +48,20 @@ CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET')
 
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
+DB_NAME=('food_bot.db')
+
+def calculate_distance(lat1, lon1, lat2, lon2):
+    R = 6371.0 # 地球半徑
+    
+    phi1 = math.radians(lat1)
+    phi2 = math.radians(lat2)
+    delta_phi = math.radians(lat2 - lat1)
+    delta_lambda = math.radians(lon2 - lon1)
+    
+    a = math.sin(delta_phi / 2)**2 + math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    
+    return R * c
 
 @app.route("/liff", methods=['GET'])
 def liff_page():
@@ -64,6 +80,43 @@ def callback():
 
     return 'OK'
 
+@app.route("/add_restaurant",methods=['POST'])
+def add_restaurant():
+    data=request.get_json()
+
+    if not data:
+        return jsonify({"status":"fail","message":"無效的資料"})
+    
+    name=data.get('name')
+    address=data.get('category')
+    category = data.get('category')
+    price_range = data.get('price_range')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
+
+    user_id = data.get('user_id')
+    search_radius = data.get('search_radius', 5.0)
+
+    try:
+        conn=sqlite3.connect('food_bot.db')
+        cursor=conn.cursor()
+        if user_id:
+            cursor.execute('''
+                REPLACE INTO user_settings (user_id, search_radius) VALUES (?, ?)
+            ''', (user_id, search_radius))
+
+        cursor.execute('''
+                INSERT INTO restaurants (name, address, category, price_range, latitude, longitude, is_favorite)
+                VALUES (?,?,?,?,?,?,1)
+            ''',(name,address,category,price_range,latitude,longitude))
+        conn.commit()
+        conn.close()
+        return jsonify({"statis":"success","message":"成功寫入資料庫"})
+    except Exception as e:
+        print(f"Database error: {e}")
+        return jsonify({"status":"fail","message":str(e)}), 500
+
+
 
 # 當收到追蹤（加入好友）事件時的處理邏輯
 @handler.add(FollowEvent)
@@ -75,7 +128,7 @@ def handle_follow(event):
         line_bot_api.reply_message(
             ReplyMessageRequest(
                 reply_token=event.reply_token,
-                messages=[TextMessage(text="已加入好友，輸入「很餓」來使用機器人！")]
+                messages=[TextMessage(text="已加入好友，輸入「很餓」來使用機器人！\n(如果沒人使用可能要等約一分鐘才能正常使用)")]
             )
         )
 
@@ -96,10 +149,6 @@ def message_text(event):
                     "size": "full",
                     "aspectRatio": "4:3",
                     "aspectMode": "cover",
-                    "action": {
-                        "type": "uri",
-                        "uri": "https://line.me/"
-                    },
                     "url": "https://linefoodbot.onrender.com/static/Denia.jpg"
                 },
                 "body": {
@@ -162,6 +211,60 @@ def message_text(event):
                 )
             )
 
+@handler.add(MessageEvent, message=LocationMessageContent)
+def handle_location(event):
+    user_id = event.source.user_id # 取得目前發送定位的使用者 ID
+    user_lat = event.message.latitude
+    user_lon = event.message.longitude
+    
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    
+    # 新增：先從資料庫抓取使用者的自訂範圍
+    cursor.execute("SELECT search_radius FROM user_settings WHERE user_id = ?", (user_id,))
+    result = cursor.fetchone()
+    # 如果使用者從未設定過，預設為 5.0 公里
+    max_distance = result[0] if result else 5.0
+    
+    # 撈取所有餐廳
+    cursor.execute("SELECT name, address, category, price_range, latitude, longitude, is_favorite FROM restaurants")
+    rows = cursor.fetchall()
+    conn.close()
+    
+    nearby_restaurants = []
+    
+    for row in rows:
+        name, address, category, price, r_lat, r_lon, is_fav = row
+        distance = calculate_distance(user_lat, user_lon, r_lat, r_lon)
+        
+        # 使用動態的 max_distance
+        if distance <= max_distance:
+            nearby_restaurants.append({
+                'name': name, 'address': address, 'category': category,
+                'price': price, 'distance': distance, 'is_favorite': is_fav
+            })
+            
+    nearby_restaurants.sort(key=lambda x: (-x['is_favorite'], x['distance']))
+    
+    if not nearby_restaurants:
+        reply_text = f"方圓 {max_distance} 公里內找不到任何您收藏或推薦的餐廳。"
+    else:
+        reply_text = f"幫您找到附近 {max_distance} 公里內的餐廳（⭐為收藏）：\n\n"
+        for idx, res in enumerate(nearby_restaurants[:5], 1):
+            fav_tag = "⭐ " if res['is_favorite'] == 1 else ""
+            reply_text += f"{idx}. {fav_tag}{res['name']} ({res['category']})\n"
+            reply_text += f"   價格: {res['price']} | 距離: {res['distance']:.2f} km\n"
+            reply_text += f"   地址: {res['address']}\n\n"
+            
+    with ApiClient(configuration) as api_client:
+        line_bot_api = MessagingApi(api_client)
+        line_bot_api.reply_message(
+            ReplyMessageRequest(
+                reply_token=event.reply_token,
+                messages=[TextMessage(text=reply_text.strip())]
+            )
+        )
 
 if __name__ == "__main__":
+    init_db()
     app.run()
