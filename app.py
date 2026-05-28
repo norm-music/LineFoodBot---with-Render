@@ -1,7 +1,7 @@
 import os
 import json
 import sqlite3
-from flask import Flask, request, abort
+from flask import Flask, request, abort, render_template, jsonify
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
 from linebot.v3.messaging import (
@@ -28,15 +28,15 @@ from linebot.v3.messaging import (
     QuickReply,
     QuickReplyItem,
     FlexMessage,
-    FlexContainer,
-
+    FlexContainer
 )
 
 from linebot.v3.webhooks import (
     MessageEvent,
     FollowEvent,
     PostbackEvent,
-    TextMessageContent
+    TextMessageContent,
+    LocationMessageContent
 )
 
 app = Flask(__name__)
@@ -141,7 +141,7 @@ def message_text(event):
                             "action": {
                                 "type": "uri",
                                 "label": "編輯表單",
-                                "uri": "http://linecorp.com/"
+                                "uri": "https://liff.line.me/2010226173-gsT146Rp"
                             },
                             "margin": "md"
                         }
