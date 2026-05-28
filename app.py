@@ -47,6 +47,9 @@ CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
+@app.route("/liff", methods=['GET'])
+def liff_page():
+    return render_template('form.html')
 
 @app.route("/callback", methods=['POST'])
 def callback():
