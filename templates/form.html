@@ -6,8 +6,7 @@
     <title>新增餐廳與設定</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    
-        
+    <script src="https://cdn.jsdelivr.net/npm/tw-city-selector@2.1.1/dist/tw-city-selector.min.js"></script>
 </head>
 <body class="p-3 p-md-4">
 
@@ -36,8 +35,16 @@
             
             <div class="mb-3">
                 <label class="form-label">詳細地址</label>
-                <input type="text" class="form-control" id="address" placeholder="請輸入完整地址以利定位" required>
-            </div>
+                <div id="tw-address-selector" class="row g-2 mb-2">
+                    <div class="col-6">
+                        <select class="form-select county" required></select>
+                    </div>
+                    <div class="col-6">
+                        <select class="form-select district" required></select>
+                     </div>
+                </div>
+                 <input type="text" class="form-control" id="road_address" placeholder="請填寫路名、巷弄與門牌號碼" required>
+             </div>
             
             <div class="mb-3">
                 <label class="form-label">料理種類</label>
@@ -60,6 +67,13 @@
     <script>
         let userId = "";
 
+
+        new TwCitySelector({
+            el:'#tw-address-selector',
+            el_County:'.county',
+            elDistrict:'.district',
+            bootstrapStyle:true
+        });
         // 初始化 LIFF
         liff.init({ liffId: '2010226173-gsT146Rp' })
             .then(() => {
@@ -75,15 +89,20 @@
         // 表單送出事件
         document.getElementById('restaurantForm').addEventListener('submit', function(e) {
             e.preventDefault();
+            const county = document.querySelector('.county').value;
+            const district = document.querySelector('.district').value;
+            const road = document.getElementById('road_address').value;
+
+            const fullAddress = '${county}${district}${road}';
 
             const data = {
                 user_id: userId,
                 search_radius: parseFloat(document.getElementById('search_radius').value),
                 name: document.getElementById('name').value,
-                address: document.getElementById('address').value,
+                address: fullAddress,
                 category: document.getElementById('category').value,
                 price_range: document.getElementById('price_range').value
-                // 這裡也不需要再傳送經緯度給後端了
+               
             };
 
             fetch('/add_restaurant', {
