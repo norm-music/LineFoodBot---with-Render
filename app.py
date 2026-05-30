@@ -44,13 +44,68 @@ from linebot.v3.webhooks import (
 from sqlite import init_db
 
 app = Flask(__name__)
-# 確保啟動時建立資料表（適用於 gunicorn / WSGI 等執行模式）
-try:
-    init_db()
-except Exception:
-    # 若初始化失敗（例如檔案權限或路徑問題），延後處理但不阻塞啟動
-    pass
-# 從環境變數讀取憑證
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(BASE_DIR, 'food_bot.db')
+
+def get_db_connection():
+    """獲取資料庫連線，加入 timeout 應付高併發，並開啟 WAL 模式"""
+    conn = sqlite3.connect(DB_NAME, timeout=30)
+    # WAL 模式可以讓讀寫分離，避免 LINE 同時噴多個 Webhook 進來時死鎖 (Database is locked)
+    conn.execute("PRAGMA journal_mode=WAL;")
+    return conn
+
+def force_init_db():
+    """專門應付 Render 重啟的無中生有建表術"""
+    try:
+        conn = sqlite3.connect(DB_NAME, timeout=30)
+        cursor = conn.cursor()
+        
+        # 1. 建立寶貝餐廳資料表
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS restaurants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT,
+                address TEXT,
+                category TEXT,
+                price_range TEXT,
+                latitude REAL,
+                longitude REAL,
+                is_favorite INTEGER DEFAULT 0
+            )
+        ''')
+        
+        # 2. 建立使用者設定資料表
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_settings (
+                user_id TEXT PRIMARY KEY,
+                search_radius REAL DEFAULT 5.0,
+                current_keyword TEXT
+            )
+        ''')
+        
+        # 3. 防呆：確保舊表升級時欄位不漏掉
+        try:
+            cursor.execute("ALTER TABLE user_settings ADD COLUMN current_keyword TEXT")
+        except sqlite3.OperationalError:
+            pass # 欄位存在就忽略
+            
+        conn.commit()
+        conn.close()
+        print("--- [Render 防禦] 資料表強制檢查與初始化成功！ ---")
+    except Exception as e:
+        print(f"--- [Render 防禦] 初始化失敗: {e} ---")
+
+# 用一個記憶體變數確保每個進程只在剛啟動時跑一次，不影響後續效能
+_db_initialized = False
+
+@app.before_request
+def auto_migrate_on_render():
+    global _db_initialized
+    if not _db_initialized:
+        force_init_db()
+        _db_initialized = True
+
+
 CHANNEL_ACCESS_TOKEN = os.environ.get('LINE_CHANNEL_ACCESS_TOKEN')
 CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET')
 
