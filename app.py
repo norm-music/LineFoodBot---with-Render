@@ -66,33 +66,46 @@ def get_lat_lng_from_address(address):
         return None, None
         
     try:
-        # 1. 自動防呆：將所有的「臺」統一替換成地圖識別率較高的「台」
+        # 1. 統一繁體「臺」轉成「台」
         formatted_address = address.replace("臺", "台")
         
-        # 2. 確保開頭有台灣
-        full_query = f"台灣 {formatted_address}" if not formatted_address.startswith("台灣") else formatted_address
+        # 2. 自動切除台灣地圖看不懂的「樓」、「F」、「之X號」
+        # 尋找是否有「樓」或「f」或「F」，有的話直接切斷，只留前面的路名門牌
+        for keyword in ["樓", "f", "F", "之"]:
+            if keyword in formatted_address:
+                formatted_address = formatted_address.split(keyword)[0]
+                # 如果切開後最後一個字是數字，補上「號」
+                if formatted_address[-1].isdigit():
+                    formatted_address += "號"
         
-        print(f"[Debug] 正在嘗試定位地址: {full_query}") # 方便在 Render Logs 看查詢字串
+        # 3. 確保開頭只有一個「台灣」，避免重複
+        formatted_address = formatted_address.replace("台灣", "").strip()
+        full_query = f"台灣 {formatted_address}"
         
-        # 3. 進行地圖查詢
+        # 🖨️ 關鍵：這行會在 Render 的 Logs 裡印出後端真正拿去查的字串！
+        print(f"!!! [LINE_BOT_DEBUG] 後端向地圖發送的查詢字串為: [{full_query}] !!!")
+        
+        # 4. 進行第一次地圖查詢
         location = geolocator.geocode(full_query, timeout=10)
         
-        # 4. 備用方案：如果換成「台」還是查不到，嘗試把「台灣 」字眼拿掉，直接查地址
+        # 5. 備用方案：如果查不到，拿掉「台灣」與「行政區」，直接查「縣市+路名門牌」
         if not location:
-            fallback_query = formatted_address.replace("台灣", "").strip()
-            print(f"[Debug] 第一次嘗試失敗，嘗試備用定位: {fallback_query}")
+            print("[LINE_BOT_DEBUG] 第一次查詢失敗，嘗試縮短地址為純縣市路名...")
+            # 假設原地址是 "台灣 台北市大安區羅斯福路四段1號" -> 嘗試只查 "台北市羅斯福路四段1號"
+            fallback_query = formatted_address
             location = geolocator.geocode(fallback_query, timeout=10)
             
         if location:
-            print(f"[Debug] 定位成功! 緯度: {location.latitude}, 經度: {location.longitude}")
+            print(f"[LINE_BOT_DEBUG] 定位成功！緯度: {location.latitude}, 經度: {location.longitude}")
             return location.latitude, location.longitude
             
-        print("[Debug] 地圖伺服器查無此地址")
+        print("[LINE_BOT_DEBUG] 地圖伺服器真的查無此地，請檢查拼字。")
         return None, None
         
     except GeocoderTimedOut:
-        print("[Debug] 地圖查詢超時")
+        print("[LINE_BOT_DEBUG] 地圖查詢超時 (Timeout)")
         return None, None
+    
     
 def calculate_distance(lat1, lon1, lat2, lon2):
     R = 6371.0 # 地球半徑
