@@ -1,0 +1,57 @@
+/* static/style.css */
+body {
+    background: linear-gradient(135deg, #fdfbf7 0%, #f5f0e6 100%);
+    min-height: 100vh;
+    font-family: "Helvetica Neue", Arial, "微軟正黑體", sans-serif;
+}
+.main-card {
+    max-width: 480px;
+    border: none;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(139, 94, 60, 0.1) !important;
+    background-color: #ffffff;
+}
+.brand-title {
+    color: #d97706;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+.setting-section {
+    background-color: #fef3c7;
+    border: 1px solid #fde68a;
+    border-radius: 12px;
+}
+.form-label {
+    font-weight: 600;
+    color: #4b5563;
+    margin-bottom: 0.4rem;
+}
+.form-control, .form-select {
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 0.6rem 0.8rem;
+    transition: all 0.2s ease;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #f59e0b;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
+}
+.btn-submit {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border: none;
+    border-radius: 10px;
+    padding: 0.75rem;
+    font-weight: 600;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.2);
+    transition: all 0.2s ease;
+}
+.btn-submit:hover {
+    background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(217, 119, 6, 0.3);
+}
+.section-divider {
+    border-top: 2px dashed #f3f4f6;
+    margin: 2rem 0;
+}
