@@ -259,6 +259,43 @@ def message_text(event):
                     messages=[FlexMessage(alt_text='詳細說明',contents=flex_content)]
                 )
             )
+def handle_text_message(event):
+    user_message = event.message.text.strip()
+    
+    # 🫵 新增：關鍵字「查看所有餐廳」的觸發邏輯
+    if user_message == "查看所有餐廳":
+        try:
+            conn = sqlite3.connect(DB_NAME)
+            cursor = conn.cursor()
+            # 撈出前 20 筆最新的餐廳
+            cursor.execute('SELECT name, category, price_range, address FROM restaurants ORDER BY id DESC LIMIT 20')
+            rows = cursor.fetchall()
+            conn.close()
+            
+            if not rows:
+                reply_text = "🍳 目前您的美食資料庫空空如也，趕快打開表單新增第一家餐廳吧！"
+            else:
+                reply_text = "📋 【我的收藏餐廳清單】\n"
+                reply_text += "───────────────────\n"
+                for idx, row in enumerate(rows, 1):
+                    name, category, price, address = row
+                    reply_text += f"{idx}. ✨ {name} ({category})\n"
+                    reply_text += f"   價格: {price}\n"
+                    reply_text += f"   地址: {address}\n"
+                    reply_text += "───────────────────\n"
+                    
+        except Exception as e:
+            reply_text = f"讀取清單時發生錯誤: {e}"
+            
+        with ApiClient(configuration) as api_client:
+            line_bot_api = MessagingApi(api_client)
+            line_bot_api.reply_message_with_http_info(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=reply_text)]
+                )
+            )
+        return # 結束執行，避免跑到你原本的其他關鍵字判斷
 
 @handler.add(MessageEvent, message=LocationMessageContent)
 def handle_location(event):
