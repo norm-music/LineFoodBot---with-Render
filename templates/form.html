@@ -60,6 +60,11 @@
     </div>
     <script>
         let userId = "";
+
+        new TwCitySelector({
+            el: '#tw-address-selector',
+            bootstrapStyle: true
+        });
         // 初始化 LIFF
         liff.init({ liffId: '2010226173-gsT146Rp' })
             .then(() => {
