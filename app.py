@@ -259,43 +259,78 @@ def message_text(event):
                     messages=[FlexMessage(alt_text='詳細說明',contents=flex_content)]
                 )
             )
-def handle_text_message(event):
-    user_message = event.message.text.strip()
-    
-    # 🫵 新增：關鍵字「查看所有餐廳」的觸發邏輯
-    if user_message == "查看所有餐廳":
-        try:
-            conn = sqlite3.connect(DB_NAME)
-            cursor = conn.cursor()
-            # 撈出前 20 筆最新的餐廳
-            cursor.execute('SELECT name, category, price_range, address FROM restaurants ORDER BY id DESC LIMIT 20')
-            rows = cursor.fetchall()
-            conn.close()
+
+
+        elif text == "查看":
+            try:
+                conn = sqlite3.connect(DB_NAME)
+                cursor = conn.cursor()
+                # 撈出前 20 筆最新的餐廳
+                cursor.execute('SELECT name, category, price_range, address FROM restaurants ORDER BY id DESC LIMIT 20')
+                rows = cursor.fetchall()
+                conn.close()
             
-            if not rows:
-                reply_text = "🍳 目前您的美食資料庫空空如也，趕快打開表單新增第一家餐廳吧！"
-            else:
-                reply_text = "📋 【我的收藏餐廳清單】\n"
-                reply_text += "───────────────────\n"
-                for idx, row in enumerate(rows, 1):
-                    name, category, price, address = row
-                    reply_text += f"{idx}. ✨ {name} ({category})\n"
-                    reply_text += f"   價格: {price}\n"
-                    reply_text += f"   地址: {address}\n"
+                if not rows:
+                    eply_text = "🍳 目前您的美食資料庫空空如也，趕快打開表單新增第一家餐廳吧！"
+                else:
+                    reply_text = "📋 【我的收藏餐廳清單】\n"
                     reply_text += "───────────────────\n"
+                    for idx, row in enumerate(rows, 1):
+                        name, category, price, address = row
+                        reply_text += f"{idx}. ✨ {name} ({category})\n"
+                        reply_text += f"   價格: {price}\n"
+                        reply_text += f"   地址: {address}\n"
+                        reply_text += "───────────────────\n"
                     
-        except Exception as e:
-            reply_text = f"讀取清單時發生錯誤: {e}"
+            except Exception as e:
+                reply_text = f"讀取清單時發生錯誤: {e}"
             
-        with ApiClient(configuration) as api_client:
-            line_bot_api = MessagingApi(api_client)
             line_bot_api.reply_message_with_http_info(
                 ReplyMessageRequest(
                     reply_token=event.reply_token,
                     messages=[TextMessage(text=reply_text)]
                 )
             )
-        return # 結束執行，避免跑到你原本的其他關鍵字判斷
+            return 
+    
+        elif text.startswith("刪除"):
+            # 透過切片抓取「刪除」後面的餐廳名稱
+            target_restaurant =text[2:].strip()
+            
+            if not target_restaurant:
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text="請輸入正確格式，例如：「刪除 阿裕牛肉湯」")]
+                    )
+                )
+                return
+                
+            try:
+                conn = sqlite3.connect(DB_NAME)
+                cursor = conn.cursor()
+                # 先查看看有沒有這家店
+                cursor.execute("SELECT id FROM restaurants WHERE name = ?", (target_restaurant,))
+                row = cursor.fetchone()
+                
+                if row:
+                    cursor.execute("DELETE FROM restaurants WHERE name = ?", (target_restaurant,))
+                    conn.commit()
+                    reply_text = f"❌ 已成功將「{target_restaurant}」從您的收藏中移除！"
+                else:
+                    reply_text = f"🔍 找不到名為「{target_restaurant}」的餐廳，請確認名稱是否正確。"
+                conn.close()
+            except Exception as e:
+                reply_text = f"刪除資料時發生錯誤: {e}"
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=reply_text)]
+                )
+            )
+            return
+            
 
 @handler.add(MessageEvent, message=LocationMessageContent)
 def handle_location(event):
