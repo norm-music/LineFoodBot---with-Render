@@ -60,15 +60,38 @@ handler = WebhookHandler(CHANNEL_SECRET)
 geolocator =  Nominatim(user_agent="my_line_foodbot")
 DB_NAME=('food_bot.db')
 
+# app.py 內部的函式修改
 def get_lat_lng_from_address(address):
-    
-    try:
-        full_query = f"台灣 {address}" if not address.startswith("台灣") else address
-        location = geolocator.geocode(full_query, timeout=10)
-        if location:
-            return location.latitude, location.longitude
+    if not address:
         return None, None
+        
+    try:
+        # 1. 自動防呆：將所有的「臺」統一替換成地圖識別率較高的「台」
+        formatted_address = address.replace("臺", "台")
+        
+        # 2. 確保開頭有台灣
+        full_query = f"台灣 {formatted_address}" if not formatted_address.startswith("台灣") else formatted_address
+        
+        print(f"[Debug] 正在嘗試定位地址: {full_query}") # 方便在 Render Logs 看查詢字串
+        
+        # 3. 進行地圖查詢
+        location = geolocator.geocode(full_query, timeout=10)
+        
+        # 4. 備用方案：如果換成「台」還是查不到，嘗試把「台灣 」字眼拿掉，直接查地址
+        if not location:
+            fallback_query = formatted_address.replace("台灣", "").strip()
+            print(f"[Debug] 第一次嘗試失敗，嘗試備用定位: {fallback_query}")
+            location = geolocator.geocode(fallback_query, timeout=10)
+            
+        if location:
+            print(f"[Debug] 定位成功! 緯度: {location.latitude}, 經度: {location.longitude}")
+            return location.latitude, location.longitude
+            
+        print("[Debug] 地圖伺服器查無此地址")
+        return None, None
+        
     except GeocoderTimedOut:
+        print("[Debug] 地圖查詢超時")
         return None, None
     
 def calculate_distance(lat1, lon1, lat2, lon2):
