@@ -553,5 +553,40 @@ def handle_location(event):
         )
 
 if __name__ == "__main__":
+    # 1. 強制在 app.py 啟動時檢查並建立 user_settings 資料表
+    try:
+        print("正在檢查並強制修復資料表...")
+        conn = sqlite3.connect('food_bot.db')
+        cursor = conn.cursor()
+        
+        # 建立 user_settings（如果不存在的話）
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS user_settings (
+                user_id TEXT PRIMARY KEY,
+                search_radius REAL DEFAULT 5.0
+            )
+        ''')
+        
+        # 順便也檢查 restaurants 資料表是否健全
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS restaurants (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                address TEXT NOT NULL,
+                category TEXT,
+                price_range TEXT,
+                latitude REAL,
+                longitude REAL,
+                is_favorite INTEGER DEFAULT 0
+            )
+        ''')
+        
+        conn.commit()
+        conn.close()
+        print("資料表強制檢查與修復完成！")
+    except Exception as e:
+        print(f"強制建立資料表失敗: {e}")
+
+    # 2. 執行你原本的初始化與啟動
     init_db()
     app.run()
