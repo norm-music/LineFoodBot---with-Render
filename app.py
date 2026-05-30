@@ -2,8 +2,7 @@ import os
 import json
 import math
 import sqlite3
-from geopy.geocoders import Nominatim
-from geopy.exc import GeocoderTimedOut
+import requests
 from flask import Flask, request, abort, render_template, jsonify
 from linebot.v3 import WebhookHandler
 from linebot.v3.exceptions import InvalidSignatureError
@@ -57,7 +56,7 @@ CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-geolocator =  Nominatim(user_agent="my_line_foodbot")
+TOMTOM_API_KEY = os.environ.get('TOMTOM_API_KEY','kNjrRPh9HSER00naIpR3yR92xEHLdtmO')
 DB_NAME=('food_bot.db')
 
 # app.py 內部的函式修改
@@ -66,44 +65,35 @@ def get_lat_lng_from_address(address):
         return None, None
         
     try:
-        # 1. 統一繁體「臺」轉成「台」
-        formatted_address = address.replace("臺", "台")
+        # TomTom 模糊地址搜尋端點
+        url = f"https://api.tomtom.com/search/2/geocode/{address}.json"
         
-        # 2. 自動切除台灣地圖看不懂的「樓」、「F」、「之X號」
-        # 尋找是否有「樓」或「f」或「F」，有的話直接切斷，只留前面的路名門牌
-        for keyword in ["樓", "f", "F", "之"]:
-            if keyword in formatted_address:
-                formatted_address = formatted_address.split(keyword)[0]
-                # 如果切開後最後一個字是數字，補上「號」
-                if formatted_address[-1].isdigit():
-                    formatted_address += "號"
+        params = {
+            'key': TOMTOM_API_KEY,
+            'countrySet': 'TW',    # 限制只搜尋台灣，精準度大暴增
+            'language': 'zh-TW',   # 繁體中文
+            'limit': 1
+        }
         
-        # 3. 確保開頭只有一個「台灣」，避免重複
-        formatted_address = formatted_address.replace("台灣", "").strip()
-        full_query = f"台灣 {formatted_address}"
+        print(f"[TomTom Debug] 正在查詢地址: {address}")
+        response = requests.get(url, params=params, timeout=10)
         
-        # 🖨️ 關鍵：這行會在 Render 的 Logs 裡印出後端真正拿去查的字串！
-        print(f"!!! [LINE_BOT_DEBUG] 後端向地圖發送的查詢字串為: [{full_query}] !!!")
-        
-        # 4. 進行第一次地圖查詢
-        location = geolocator.geocode(full_query, timeout=10)
-        
-        # 5. 備用方案：如果查不到，拿掉「台灣」與「行政區」，直接查「縣市+路名門牌」
-        if not location:
-            print("[LINE_BOT_DEBUG] 第一次查詢失敗，嘗試縮短地址為純縣市路名...")
-            # 假設原地址是 "台灣 台北市大安區羅斯福路四段1號" -> 嘗試只查 "台北市羅斯福路四段1號"
-            fallback_query = formatted_address
-            location = geolocator.geocode(fallback_query, timeout=10)
+        if response.status_code == 200:
+            result = response.json()
+            results_list = result.get('results', [])
             
-        if location:
-            print(f"[LINE_BOT_DEBUG] 定位成功！緯度: {location.latitude}, 經度: {location.longitude}")
-            return location.latitude, location.longitude
-            
-        print("[LINE_BOT_DEBUG] 地圖伺服器真的查無此地，請檢查拼字。")
+            if results_list:
+                position = results_list[0].get('position', {})
+                lat = position.get('lat')
+                lng = position.get('lon')
+                print(f"[TomTom Debug] 定位成功! lat: {lat}, lng: {lng}")
+                return lat, lng
+                
+        print("[TomTom Debug] 查無此地址的經緯度")
         return None, None
         
-    except GeocoderTimedOut:
-        print("[LINE_BOT_DEBUG] 地圖查詢超時 (Timeout)")
+    except Exception as e:
+        print(f"[TomTom Debug] 查詢時發生錯誤: {e}")
         return None, None
     
     
