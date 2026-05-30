@@ -51,7 +51,7 @@ CHANNEL_SECRET = os.environ.get('LINE_CHANNEL_SECRET')
 configuration = Configuration(access_token=CHANNEL_ACCESS_TOKEN)
 handler = WebhookHandler(CHANNEL_SECRET)
 
-geolocator =  Nominatim(finder = "my_line_foodbot")
+geolocator =  Nominatim(user_agent = "my_line_foodbot")
 DB_NAME=('food_bot.db')
 
 def get_lat_lng_from_address(address):
