@@ -15,13 +15,12 @@
         <form id="restaurantForm">
      
             <div class="mb-4 p-3 setting-section">
-                <label class="form-label text-amber-900">🎯 我的預設搜尋範圍</label>
-                <select class="form-select" id="search_radius">
-                    <option value="1.0">1 公里（附近走走）</option>
-                    <option value="3.0">3 公里（騎車很近）</option>
-                    <option value="5.0" selected>5 公里（開車或外送）</option>
-                    <option value="10.0">10 公里（美食值得跑遠）</option>
-                </select>
+                <label class="form-label text-amber-900" for="search_radius">🎯 我的預設搜尋範圍 (公里)</label>
+                <div class="input-group">
+                    <input type="number" class="form-control" id="search_radius" step="0.1" min="0.1" max="50" value="5.0" placeholder="請輸入範圍" required>
+                    <span class="input-group-text">公里</span>
+                </div>
+                <div class="form-text text-muted">您可以自由輸入任意數字（例如：1.5 或 8）</div>
             </div>
 
             <div class="section-divider"></div>
@@ -49,9 +48,11 @@
             <div class="mb-4">
                 <label class="form-label">價格區間</label>
                 <select class="form-select" id="price_range">
-                    <option value="$">$ (平價小吃)</option>
-                    <option value="$$">$$ (中價簡餐)</option>
-                    <option value="$$$">$$$ (高價餐廳)</option>
+                    <option value="$">&lt;100</option>
+                    <option value="$$">100~149</option>
+                    <option value="$$$">150~199</option>
+                    <option value="$$$">200~249</option>
+                    <option value="$$$">&gt;250</option>
                 </select>
             </div>
             
@@ -60,7 +61,6 @@
     </div>
     <script>
         let userId = "";
-
         new TwCitySelector({
             el: '#tw-address-selector',
             bootstrapStyle: true
