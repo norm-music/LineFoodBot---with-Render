@@ -271,7 +271,7 @@ def message_text(event):
                 conn.close()
             
                 if not rows:
-                    eply_text = "🍳 目前您的美食資料庫空空如也，趕快打開表單新增第一家餐廳吧！"
+                    reply_text = "🍳 目前您的美食資料庫空空如也，趕快打開表單新增第一家餐廳吧！"
                 else:
                     reply_text = "📋 【我的收藏餐廳清單】\n"
                     reply_text += "───────────────────\n"
