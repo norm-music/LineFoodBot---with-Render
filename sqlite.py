@@ -22,6 +22,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS user_settings (
             user_id TEXT PRIMARY KEY,
             search_radius REAL DEFAULT 5.0
+            current_keyword TEXT
         )
     ''')
     
