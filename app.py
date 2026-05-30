@@ -1,3 +1,4 @@
+
 import os
 import json
 import math
@@ -88,7 +89,7 @@ def add_restaurant():
         return jsonify({"status":"fail","message":"無效的資料"})
     
     name=data.get('name')
-    address=data.get('category')
+    address=data.get('address')
     category = data.get('category')
     price_range = data.get('price_range')
     latitude = data.get('latitude')
@@ -111,7 +112,7 @@ def add_restaurant():
             ''',(name,address,category,price_range,latitude,longitude))
         conn.commit()
         conn.close()
-        return jsonify({"statis":"success","message":"成功寫入資料庫"})
+        return jsonify({"status":"success","message":"成功寫入資料庫"})
     except Exception as e:
         print(f"Database error: {e}")
         return jsonify({"status":"fail","message":str(e)}), 500
