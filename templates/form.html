@@ -11,9 +11,9 @@
 <body class="p-3 p-md-4">
 
     <div class="card main-card p-4 mx-auto mt-3">
-        <h3 class="mb-4 text-center brand-title">🍳 餐廳收藏助手</h3
+        <h3 class="mb-4 text-center brand-title">🍳 餐廳收藏助手</h3>
         <form id="restaurantForm">
-            </form>
+     
             <div class="mb-4 p-3 setting-section">
                 <label class="form-label text-amber-900">🎯 我的預設搜尋範圍</label>
                 <select class="form-select" id="search_radius">
@@ -42,7 +42,7 @@
             </div>
             
             <div class="mb-3">
-                <label class="form-label">料理種類</label>
+                <label class="form-label">餐廳種類</label>
                 <input type="text" class="form-control" id="category" placeholder="例如：火鍋、小吃、美式" required>
             </div>
             
@@ -56,18 +56,10 @@
             </div>
             
             <button type="submit" class="btn btn-primary w-100 btn-submit">確認送出更新</button>
+    </form>
     </div>
-
     <script>
         let userId = "";
-
-
-        new TwCitySelector({
-            el:'#tw-address-selector',
-            elCounty:'.county',
-            elDistrict:'.district',
-            bootstrapStyle:true
-        });
         // 初始化 LIFF
         liff.init({ liffId: '2010226173-gsT146Rp' })
             .then(() => {
@@ -88,253 +80,6 @@
             const road = document.getElementById('road_address').value;
 
             const fullAddress = `${county}${district}${road}`;
-
-            const data = {
-                user_id: userId,
-                search_radius: parseFloat(document.getElementById('search_radius').value),
-                name: document.getElementById('name').value,
-                address: fullAddress,
-                category: document.getElementById('category').value,
-                price_range: document.getElementById('price_range').value
-               
-            };
-
-            fetch('/add_restaurant', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(res => {
-                if(res.status === 'success') {
-                    alert('設定與餐廳更新成功！');
-                    liff.closeWindow(); 
-                } else {
-                    // 顯示後端傳回來的錯誤訊息（例如地址查不到經緯度）
-                    alert('更新失敗：' + res.message);
-                }
-            })
-            .catch(err => { alert('連線錯誤，請稍後再試！'); });
-        });
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新增餐廳與設定</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tw-city-selector@2.1.1/dist/tw-city-selector.min.js"></script>
-</head>
-<body class="p-3 p-md-4">
-
-    <div class="card main-card p-4 mx-auto mt-3">
-        <h3 class="mb-4 text-center brand-title">🍳 餐廳收藏助手</h3>
-        
-        <form id="restaurantForm">
-            <div class="mb-4 p-3 setting-section">
-                <label class="form-label text-amber-900">🎯 我的預設搜尋範圍</label>
-                <select class="form-select" id="search_radius">
-                    <option value="1.0">1 公里（附近走走）</option>
-                    <option value="3.0">3 公里（騎車很近）</option>
-                    <option value="5.0" selected>5 公里（開車或外送）</option>
-                    <option value="10.0">10 公里（美食值得跑遠）</option>
-                </select>
-            </div>
-
-            <div class="section-divider"></div>
-            
-            <h5 class="mb-3 text-secondary fw-bold">✨ 新增收藏餐廳</h5>
-            
-            <div class="mb-3">
-                <label class="form-label">餐廳名稱</label>
-                <input type="text" class="form-control" id="name" required>
-            </div>
-            
-           <div class="mb-3">
-                <label class="form-label">詳細地址</label>
-    
-                <div id="tw-address-selector" class="d-flex gap-2 mb-2"></div>
-    
-                <input type="text" class="form-control" id="road_address" placeholder="請填寫路名、巷弄與門牌號碼" required>
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label">料理種類</label>
-                <input type="text" class="form-control" id="category" placeholder="例如：火鍋、小吃、美式" required>
-            </div>
-            
-            <div class="mb-4">
-                <label class="form-label">價格區間</label>
-                <select class="form-select" id="price_range">
-                    <option value="$">$ (平價小吃)</option>
-                    <option value="$$">$$ (中價簡餐)</option>
-                    <option value="$$$">$$$ (高價餐廳)</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn btn-primary w-100 btn-submit">確認送出更新</button>
-        </form>
-    </div>
-
-    <script>
-        let userId = "";
-
-
-        new TwCitySelector({
-            el:'#tw-address-selector',
-            elCounty:'.county',
-            elDistrict:'.district',
-            bootstrapStyle:true
-        });
-        // 初始化 LIFF
-        liff.init({ liffId: '2010226173-gsT146Rp' })
-            .then(() => {
-                if (liff.isLoggedIn()) {
-                    const context = liff.getContext();
-                    userId = context.userId; 
-                } else {
-                    liff.login(); 
-                }
-            })
-            .catch((err) => { console.error("LIFF 初始化失敗:", err); });
-
-        // 表單送出事件
-        document.getElementById('restaurantForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const county = document.querySelector('select[name="county"]').value;
-            const district = document.querySelector('select[name="district"]').value;
-            const road = document.getElementById('road_address').value;
-
-            const fullAddress = `${county}${district}${road}`;
-
-            const data = {
-                user_id: userId,
-                search_radius: parseFloat(document.getElementById('search_radius').value),
-                name: document.getElementById('name').value,
-                address: fullAddress,
-                category: document.getElementById('category').value,
-                price_range: document.getElementById('price_range').value
-               
-            };
-
-            fetch('/add_restaurant', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            })
-            .then(response => response.json())
-            .then(res => {
-                if(res.status === 'success') {
-                    alert('設定與餐廳更新成功！');
-                    liff.closeWindow(); 
-                } else {
-                    // 顯示後端傳回來的錯誤訊息（例如地址查不到經緯度）
-                    alert('更新失敗：' + res.message);
-                }
-            })
-            .catch(err => { alert('連線錯誤，請稍後再試！'); });
-        });
-    </script>
-</body>
-</html><!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>新增餐廳與設定</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/tw-city-selector@2.1.1/dist/tw-city-selector.min.js"></script>
-</head>
-<body class="p-3 p-md-4">
-
-    <div class="card main-card p-4 mx-auto mt-3">
-        <h3 class="mb-4 text-center brand-title">🍳 餐廳收藏助手</h3>
-        
-        <form id="restaurantForm">
-            <div class="mb-4 p-3 setting-section">
-                <label class="form-label text-amber-900">🎯 我的預設搜尋範圍</label>
-                <select class="form-select" id="search_radius">
-                    <option value="1.0">1 公里（附近走走）</option>
-                    <option value="3.0">3 公里（騎車很近）</option>
-                    <option value="5.0" selected>5 公里（開車或外送）</option>
-                    <option value="10.0">10 公里（美食值得跑遠）</option>
-                </select>
-            </div>
-
-            <div class="section-divider"></div>
-            
-            <h5 class="mb-3 text-secondary fw-bold">✨ 新增收藏餐廳</h5>
-            
-            <div class="mb-3">
-                <label class="form-label">餐廳名稱</label>
-                <input type="text" class="form-control" id="name" placeholder="例如：阿裕牛肉湯" required>
-            </div>
-            
-            <div class="mb-3">
-                <label class="form-label">詳細地址</label>
-                <div id="tw-address-selector" class="row g-2 mb-2">
-                    <div class="col-6">
-                        <select class="form-select county" required></select>
-                    </div>
-                    <div class="col-6">
-                        <select class="form-select district" required></select>
-                     </div>
-                </div>
-                 <input type="text" class="form-control" id="road_address" placeholder="請填寫路名、巷弄與門牌號碼" required>
-             </div>
-            
-            <div class="mb-3">
-                <label class="form-label">料理種類</label>
-                <input type="text" class="form-control" id="category" placeholder="例如：火鍋、小吃、美式" required>
-            </div>
-            
-            <div class="mb-4">
-                <label class="form-label">價格區間</label>
-                <select class="form-select" id="price_range">
-                    <option value="$">$ (平價小吃)</option>
-                    <option value="$$">$$ (中價簡餐)</option>
-                    <option value="$$$">$$$ (高價餐廳)</option>
-                </select>
-            </div>
-            
-            <button type="submit" class="btn btn-primary w-100 btn-submit">確認送出更新</button>
-        </form>
-    </div>
-
-    <script>
-        let userId = "";
-
-
-        new TwCitySelector({
-            el:'#tw-address-selector',
-            el_County:'.county',
-            elDistrict:'.district',
-            bootstrapStyle:true
-        });
-        // 初始化 LIFF
-        liff.init({ liffId: '2010226173-gsT146Rp' })
-            .then(() => {
-                if (liff.isLoggedIn()) {
-                    const context = liff.getContext();
-                    userId = context.userId; 
-                } else {
-                    liff.login(); 
-                }
-            })
-            .catch((err) => { console.error("LIFF 初始化失敗:", err); });
-
-        // 表單送出事件
-        document.getElementById('restaurantForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const county = document.querySelector('.county').value;
-            const district = document.querySelector('.district').value;
-            const road = document.getElementById('road_address').value;
-
-            const fullAddress = '${county}${district}${road}';
 
             const data = {
                 user_id: userId,
